@@ -157,13 +157,13 @@ export function FeedingTracker() {
   const maxDaily = Math.max(...recentDailyLatestFirst.map((d) => d.totalMl), 1);
 
   return (
-    <main style={{ position: "relative" }}>
-      <Link href="/history" className="link-button" style={{ position: "absolute", top: 24, right: 16 }}>
-        기록/통계 보기
-      </Link>
+    <main>
       <div className="stack" style={{ marginBottom: 12 }}>
         <div className="inline top-row">
-          <h1>하늘이 수유 트래커</h1>
+          <h1 className="header-title">하늘이 수유 트래커</h1>
+          <Link href="/history" className="link-button header-action">
+            기록/통계 보기
+          </Link>
         </div>
       </div>
 

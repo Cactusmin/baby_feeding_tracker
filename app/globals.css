@@ -186,10 +186,20 @@ button:disabled {
 
 .top-row {
   gap: 10px;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .month-nav strong {
   font-size: 1rem;
+}
+
+.header-title {
+  margin-right: auto;
+}
+
+.header-action {
+  margin-left: auto;
 }
 
 .log-right {
@@ -353,13 +363,8 @@ button:disabled {
   }
 
   .top-row {
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-
-  .top-row h1,
-  .top-row h2 {
-    width: 100%;
+    flex-wrap: nowrap;
+    align-items: center;
   }
 
   .month-nav .link-button {
