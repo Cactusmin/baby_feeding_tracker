@@ -197,13 +197,13 @@ export function HistoryView() {
   }, [calendarCells, dailySummary]);
 
   return (
-    <main>
+    <main style={{ position: "relative" }}>
+      <Link href="/" className="link-button" style={{ position: "absolute", top: 24, right: 16 }}>
+        수유 입력 화면
+      </Link>
       <div className="stack" style={{ marginBottom: 12 }}>
-        <div className="inline top-row" style={{ justifyContent: "space-between" }}>
+        <div className="inline top-row">
           <h1>기록/통계 보기</h1>
-          <Link href="/" className="link-button">
-            입력 화면
-          </Link>
         </div>
         <p className="muted">달력에서 날짜를 선택해 해당 날짜 기록과 통계를 확인하세요.</p>
       </div>

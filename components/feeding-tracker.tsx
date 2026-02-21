@@ -86,17 +86,17 @@ export function FeedingTracker() {
     const payload =
       type === "breast"
         ? {
-            feed_type: "breast",
-            left_minutes: leftMinutes,
-            right_minutes: rightMinutes,
-            formula_ml: null
-          }
+          feed_type: "breast",
+          left_minutes: leftMinutes,
+          right_minutes: rightMinutes,
+          formula_ml: null
+        }
         : {
-            feed_type: "formula",
-            left_minutes: null,
-            right_minutes: null,
-            formula_ml: formulaMl
-          };
+          feed_type: "formula",
+          left_minutes: null,
+          right_minutes: null,
+          formula_ml: formulaMl
+        };
 
     const { error: insertError } = await supabase.from("feed_logs").insert(payload);
 
@@ -157,15 +157,14 @@ export function FeedingTracker() {
   const maxDaily = Math.max(...recentDailyLatestFirst.map((d) => d.totalMl), 1);
 
   return (
-    <main>
+    <main style={{ position: "relative" }}>
+      <Link href="/history" className="link-button" style={{ position: "absolute", top: 24, right: 16 }}>
+        기록/통계 보기
+      </Link>
       <div className="stack" style={{ marginBottom: 12 }}>
-        <div className="inline top-row" style={{ justifyContent: "space-between" }}>
-          <h1>아기 수유 트래커</h1>
-          <Link href="/history" className="link-button">
-            기록/통계 보기
-          </Link>
+        <div className="inline top-row">
+          <h1>하늘이 수유 트래커</h1>
         </div>
-        <p className="muted">로그인 없이 모두가 같은 데이터를 입력/조회하는 MVP</p>
       </div>
 
       <div className="stack">

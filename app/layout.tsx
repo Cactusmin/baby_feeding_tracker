@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "아기 수유 트래커",
-  description: "로그인 없이 공유되는 아기 수유 기록 MVP"
+  title: "하늘이 수유 트래커",
 };
 
 export default function RootLayout({
