@@ -182,6 +182,20 @@ export function HistoryView() {
     };
   }, [selectedLogs, breastMlPerMin]);
 
+  const maxMonthMl = useMemo(() => {
+    let max = 0;
+    for (const cell of calendarCells) {
+      if (!cell.inMonth) {
+        continue;
+      }
+      const ml = dailySummary.get(cell.key)?.totalMl ?? 0;
+      if (ml > max) {
+        max = ml;
+      }
+    }
+    return max;
+  }, [calendarCells, dailySummary]);
+
   return (
     <main>
       <div className="stack" style={{ marginBottom: 12 }}>
@@ -219,21 +233,25 @@ export function HistoryView() {
               const summary = dailySummary.get(cell.key);
               const isSelected = cell.key === selectedDay;
               const isToday = cell.key === todayKey;
+              const totalMl = summary?.totalMl ?? 0;
+              const ratio = maxMonthMl > 0 ? Math.min(totalMl / maxMonthMl, 1) : 0;
+              const fillAlpha = cell.inMonth ? 0.08 + ratio * 0.62 : 0.04;
+              const backgroundColor = `rgba(31, 157, 101, ${fillAlpha.toFixed(3)})`;
+              const isStrong = ratio >= 0.6;
 
               return (
                 <button
                   key={cell.key}
                   type="button"
-                  className={`calendar-day ${cell.inMonth ? "" : "outside"} ${isSelected ? "selected" : ""} ${summary ? "has-record" : ""}`}
+                  className={`calendar-day ${cell.inMonth ? "" : "outside"} ${isSelected ? "selected" : ""} ${isStrong ? "strong-fill" : ""}`}
+                  style={{ backgroundColor }}
                   onClick={() => {
                     setSelectedDay(cell.key);
                     setMonthCursor(monthStart(new Date(`${cell.key}T00:00:00`)));
                   }}
                 >
                   <span className={`day-number ${isToday ? "today" : ""}`}>{cell.dayNum}</span>
-                  <span className="day-meta">
-                    {summary ? `${summary.totalMl}ml · ${summary.count}회` : "기록 없음"}
-                  </span>
+                  <span className="day-meta">{summary ? `${summary.totalMl}ml` : "0ml"}</span>
                 </button>
               );
             })}

@@ -184,16 +184,6 @@ button:disabled {
   background: #fbfefd;
 }
 
-.delete-button {
-  background: #ffe9e9;
-  color: #a12222;
-  min-height: 40px;
-  padding: 8px 12px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  border-radius: 9px;
-}
-
 .top-row {
   gap: 10px;
 }
@@ -206,8 +196,28 @@ button:disabled {
   text-align: right;
 }
 
-.delete-wrap {
-  margin-top: 8px;
+.log-item.deletable {
+  position: relative;
+  padding-right: 42px;
+}
+
+.delete-icon-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 999px;
+  background: #e8f6ef;
+  color: #2f6f55;
+  border: 1px solid #cbe8d8;
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .day-group {
@@ -238,36 +248,26 @@ button:disabled {
 }
 
 .calendar-day {
-  background: #f5fbf7;
   border: 1px solid var(--line);
   border-radius: 10px;
-  min-height: 82px;
+  aspect-ratio: 1 / 1;
+  width: 100%;
   padding: 8px 6px;
   position: relative;
-  text-align: left;
+  text-align: center;
   display: grid;
   gap: 4px;
-  align-content: start;
+  align-content: center;
+  justify-items: center;
 }
 
 .calendar-day.selected {
   border-color: var(--primary);
-  background: #e9f8ef;
+  box-shadow: 0 0 0 2px rgba(31, 157, 101, 0.2) inset;
 }
 
 .calendar-day.outside {
   opacity: 0.45;
-}
-
-.calendar-day.has-record::after {
-  content: "";
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--primary);
 }
 
 .day-number {
@@ -286,6 +286,11 @@ button:disabled {
   word-break: break-word;
 }
 
+.calendar-day.strong-fill .day-number,
+.calendar-day.strong-fill .day-meta {
+  color: #ffffff;
+}
+
 .log-type {
   font-weight: 700;
 }
@@ -293,8 +298,7 @@ button:disabled {
 .chart {
   display: flex;
   gap: 10px;
-  align-items: flex-end;
-  height: 140px;
+  align-items: stretch;
   padding: 8px 0;
 }
 
@@ -305,9 +309,16 @@ button:disabled {
   justify-items: center;
 }
 
-.bar {
+.bar-track {
   width: 100%;
   max-width: 42px;
+  height: 96px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bar {
+  width: 100%;
   min-height: 3px;
   border-radius: 10px;
   background: linear-gradient(180deg, #5ccf97 0%, #1f9d65 100%);
@@ -365,8 +376,12 @@ button:disabled {
     width: 100%;
   }
 
+  .delete-icon-button {
+    top: 6px;
+    right: 6px;
+  }
+
   .calendar-day {
-    min-height: 56px;
     padding: 6px 5px;
   }
 

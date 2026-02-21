@@ -299,8 +299,10 @@ export function FeedingTracker() {
               const height = (day.totalMl / maxDaily) * 100;
               return (
                 <div className="bar-wrap" key={day.label}>
-                  <span className="bar-value">{day.totalMl}</span>
-                  <div className="bar" style={{ height: `${Math.max(height, 2)}%` }} />
+                  <span className="bar-value">{day.totalMl}ml</span>
+                  <div className="bar-track">
+                    <div className="bar" style={{ height: `${Math.max(height, 2)}%` }} />
+                  </div>
                   <span className="bar-label">{day.label}</span>
                 </div>
               );
@@ -315,7 +317,16 @@ export function FeedingTracker() {
               <p className="muted">아직 기록이 없습니다.</p>
             ) : (
               logs.map((log) => (
-                <div className="log-item" key={log.id}>
+                <div className="log-item deletable" key={log.id}>
+                  <button
+                    type="button"
+                    className="delete-icon-button"
+                    disabled={deletingId === log.id}
+                    aria-label="기록 삭제"
+                    onClick={() => void deleteLog(log.id)}
+                  >
+                    {deletingId === log.id ? "…" : "×"}
+                  </button>
                   <div>
                     <div className="log-type">{log.feed_type === "breast" ? "모유" : "분유"}</div>
                     <p className="muted">{formatKoreanDate(log.created_at)}</p>
@@ -329,16 +340,6 @@ export function FeedingTracker() {
                     ) : (
                       <strong>{log.formula_ml ?? 0}ml</strong>
                     )}
-                    <div className="delete-wrap">
-                      <button
-                        type="button"
-                        className="delete-button"
-                        disabled={deletingId === log.id}
-                        onClick={() => void deleteLog(log.id)}
-                      >
-                        {deletingId === log.id ? "삭제 중..." : "삭제"}
-                      </button>
-                    </div>
                   </div>
                 </div>
               ))
