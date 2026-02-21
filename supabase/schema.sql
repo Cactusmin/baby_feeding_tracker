@@ -29,36 +29,42 @@ alter table public.feed_logs enable row level security;
 alter table public.app_settings enable row level security;
 
 -- Public read/write for no-login MVP.
+drop policy if exists "Public can read logs" on public.feed_logs;
 create policy "Public can read logs"
   on public.feed_logs
   for select
   to anon
   using (true);
 
+drop policy if exists "Public can insert logs" on public.feed_logs;
 create policy "Public can insert logs"
   on public.feed_logs
   for insert
   to anon
   with check (true);
 
+drop policy if exists "Public can delete logs" on public.feed_logs;
 create policy "Public can delete logs"
   on public.feed_logs
   for delete
   to anon
   using (true);
 
+drop policy if exists "Public can read settings" on public.app_settings;
 create policy "Public can read settings"
   on public.app_settings
   for select
   to anon
   using (true);
 
+drop policy if exists "Public can upsert settings" on public.app_settings;
 create policy "Public can upsert settings"
   on public.app_settings
   for insert
   to anon
   with check (true);
 
+drop policy if exists "Public can update settings" on public.app_settings;
 create policy "Public can update settings"
   on public.app_settings
   for update

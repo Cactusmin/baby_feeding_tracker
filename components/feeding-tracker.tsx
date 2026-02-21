@@ -119,10 +119,20 @@ export function FeedingTracker() {
     setDeletingId(id);
     setError(null);
 
-    const { error: deleteError } = await supabase.from("feed_logs").delete().eq("id", id);
+    const { data: deletedRows, error: deleteError } = await supabase
+      .from("feed_logs")
+      .delete()
+      .eq("id", id)
+      .select("id");
 
     if (deleteError) {
       setError(deleteError.message);
+      setDeletingId(null);
+      return;
+    }
+
+    if (!deletedRows || deletedRows.length === 0) {
+      setError("삭제 권한이 없어 기록이 삭제되지 않았습니다. Supabase delete 정책을 확인해주세요.");
       setDeletingId(null);
       return;
     }
