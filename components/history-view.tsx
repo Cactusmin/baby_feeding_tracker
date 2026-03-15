@@ -297,7 +297,9 @@ export function HistoryView() {
                   selectedLogs.map((log) => (
                     <div className="log-item" key={log.id}>
                       <div>
-                        <div className="log-type">{log.feed_type === "breast" ? "모유" : "분유"}</div>
+                        <div className="log-type">
+                          {log.feed_type === "breast" ? "모유" : log.feed_type === "formula" ? "분유" : "혼합"}
+                        </div>
                         <p className="muted">{formatKoreanDate(log.created_at)}</p>
                       </div>
                       <div className="log-right">
@@ -308,8 +310,15 @@ export function HistoryView() {
                             </p>
                             <strong>{feedLogToMl(log, breastMlPerMin)}ml</strong>
                           </>
-                        ) : (
+                        ) : log.feed_type === "formula" ? (
                           <strong>{log.formula_ml ?? 0}ml</strong>
+                        ) : (
+                          <>
+                            <p className="muted">
+                              L {log.left_minutes ?? 0}분 / R {log.right_minutes ?? 0}분 + {log.formula_ml ?? 0}ml
+                            </p>
+                            <strong>{feedLogToMl(log, breastMlPerMin)}ml</strong>
+                          </>
                         )}
                       </div>
                     </div>

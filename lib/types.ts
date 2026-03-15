@@ -1,4 +1,4 @@
-export type FeedType = "breast" | "formula";
+export type FeedType = "breast" | "formula" | "mixed";
 
 export type FeedLogRow = {
   id: string;

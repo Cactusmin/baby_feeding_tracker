@@ -19,6 +19,15 @@ function clampNonNegative(value: number): number {
   return Math.max(0, value);
 }
 
+function getLocalDatetimeString(date: Date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 export function FeedingTracker() {
   const [type, setType] = useState<FeedType>("breast");
   const [leftMinutes, setLeftMinutes] = useState(10);
@@ -30,8 +39,17 @@ export function FeedingTracker() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [recordTime, setRecordTime] = useState("");
+  const [showTimePopup, setShowTimePopup] = useState(false);
+  const [now, setNow] = useState(new Date());
+
   useEffect(() => {
+    setRecordTime(getLocalDatetimeString(new Date()));
+    const timer = setInterval(() => setNow(new Date()), 60000);
+
     void Promise.all([fetchLogs(), fetchSetting()]);
+
+    return () => clearInterval(timer);
   }, []);
 
   async function fetchLogs() {
@@ -83,20 +101,32 @@ export function FeedingTracker() {
     setSaving(true);
     setError(null);
 
+    const dt = recordTime ? new Date(recordTime) : new Date();
+
     const payload =
       type === "breast"
         ? {
+          created_at: dt.toISOString(),
           feed_type: "breast",
           left_minutes: leftMinutes,
           right_minutes: rightMinutes,
           formula_ml: null
         }
-        : {
-          feed_type: "formula",
-          left_minutes: null,
-          right_minutes: null,
-          formula_ml: formulaMl
-        };
+        : type === "formula"
+          ? {
+            created_at: dt.toISOString(),
+            feed_type: "formula",
+            left_minutes: null,
+            right_minutes: null,
+            formula_ml: formulaMl
+          }
+          : {
+            created_at: dt.toISOString(),
+            feed_type: "mixed",
+            left_minutes: leftMinutes,
+            right_minutes: rightMinutes,
+            formula_ml: formulaMl
+          };
 
     const { error: insertError } = await supabase.from("feed_logs").insert(payload);
 
@@ -107,7 +137,14 @@ export function FeedingTracker() {
     }
 
     await fetchLogs();
+    setRecordTime(getLocalDatetimeString(new Date()));
+    setShowTimePopup(false);
     setSaving(false);
+  }
+
+  function handleOpenPopup() {
+    setRecordTime(getLocalDatetimeString(new Date()));
+    setShowTimePopup(true);
   }
 
   async function deleteLog(id: string) {
@@ -151,6 +188,17 @@ export function FeedingTracker() {
     return { totalMl, count };
   }, [logs, breastMlPerMin]);
 
+  const timeSinceLastFeed = useMemo(() => {
+    if (logs.length === 0) return null;
+    const lastTime = new Date(logs[0].created_at).getTime();
+    const diffMs = Math.max(0, now.getTime() - lastTime);
+    const diffMins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    if (hours > 0) return `${hours}시간 ${mins}분`;
+    return `${mins}분`;
+  }, [logs, now]);
+
   const recentDaily = useMemo(() => getLastNDaysTotals(logs, breastMlPerMin, 7), [logs, breastMlPerMin]);
   const recentDailyLatestFirst = useMemo(() => [...recentDaily].reverse(), [recentDaily]);
 
@@ -171,26 +219,39 @@ export function FeedingTracker() {
         <section className="card stack">
           <h2>빠른 입력</h2>
 
+          {timeSinceLastFeed && (
+            <p className="muted" style={{ marginTop: -8 }}>
+              마지막 수유로부터 <strong>{timeSinceLastFeed}</strong> 경과
+            </p>
+          )}
+
           <div className="inline">
             <button
               type="button"
               className={`tab-button ${type === "breast" ? "active" : ""}`}
               onClick={() => setType("breast")}
             >
-              모유 수유
+              모유
             </button>
             <button
               type="button"
               className={`tab-button ${type === "formula" ? "active" : ""}`}
               onClick={() => setType("formula")}
             >
-              분유 수유
+              분유
+            </button>
+            <button
+              type="button"
+              className={`tab-button ${type === "mixed" ? "active" : ""}`}
+              onClick={() => setType("mixed")}
+            >
+              혼합
             </button>
           </div>
 
-          {type === "breast" ? (
+          {type === "breast" || type === "mixed" ? (
             <>
-              <p className="muted">5분 단위로 입력</p>
+              <p className="muted">모유: 5분 단위로 입력</p>
 
               <div className="stack">
                 <label>왼쪽</label>
@@ -224,13 +285,19 @@ export function FeedingTracker() {
                 </div>
               </div>
 
-              <p className="muted">
-                예상 수유량: <strong>{(leftMinutes + rightMinutes) * breastMlPerMin}ml</strong>
-              </p>
+              {type === "breast" && (
+                <p className="muted">
+                  예상 수유량: <strong>{(leftMinutes + rightMinutes) * breastMlPerMin}ml</strong>
+                </p>
+              )}
             </>
-          ) : (
+          ) : null}
+
+          {type === "formula" || type === "mixed" ? (
             <>
-              <p className="muted">10ml 단위로 입력</p>
+              <p className="muted" style={{ marginTop: type === "mixed" ? 8 : 0 }}>
+                분유: 10ml 단위로 입력
+              </p>
               <div className="stepper">
                 <button
                   type="button"
@@ -244,48 +311,55 @@ export function FeedingTracker() {
                 </button>
               </div>
             </>
+          ) : null}
+
+          {type === "mixed" && (
+            <p className="muted">
+              총 예상 수유량: <strong>{(leftMinutes + rightMinutes) * breastMlPerMin + formulaMl}ml</strong>
+            </p>
           )}
 
           <button
             type="button"
             className={`save-button ${type === "formula" ? "formula" : ""}`}
             disabled={saving}
-            onClick={() => void submitLog()}
+            onClick={handleOpenPopup}
           >
-            {saving ? "저장 중..." : "기록 저장"}
+            기록 저장
           </button>
 
           {error ? <p className="error">오류: {error}</p> : null}
         </section>
+        {type !== "formula" && (
+          <section className="card stack">
+            <h2>모유 1분당 ml 설정</h2>
+            <p className="muted">계산 기준값이며 누구나 수정할 수 있습니다.</p>
 
-        <section className="card stack">
-          <h2>모유 1분당 ml 설정</h2>
-          <p className="muted">계산 기준값이며 누구나 수정할 수 있습니다.</p>
-
-          <div className="stepper">
-            <button
-              type="button"
-              onClick={() => {
-                const next = clampNonNegative(breastMlPerMin - 1);
-                setBreastMlPerMin(next);
-                void saveSetting(next);
-              }}
-            >
-              -
-            </button>
-            <div className="value">{breastMlPerMin}ml</div>
-            <button
-              type="button"
-              onClick={() => {
-                const next = breastMlPerMin + 1;
-                setBreastMlPerMin(next);
-                void saveSetting(next);
-              }}
-            >
-              +
-            </button>
-          </div>
-        </section>
+            <div className="stepper">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = clampNonNegative(breastMlPerMin - 1);
+                  setBreastMlPerMin(next);
+                  void saveSetting(next);
+                }}
+              >
+                -
+              </button>
+              <div className="value">{breastMlPerMin}ml</div>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = breastMlPerMin + 1;
+                  setBreastMlPerMin(next);
+                  void saveSetting(next);
+                }}
+              >
+                +
+              </button>
+            </div>
+          </section>
+        )}
 
         <section className="card stack">
           <h2>오늘 요약</h2>
@@ -320,12 +394,12 @@ export function FeedingTracker() {
         </section>
 
         <section className="card stack">
-          <h2>최근 기록</h2>
+          <h2>오늘 기록</h2>
           <div className="logs">
-            {logs.length === 0 ? (
-              <p className="muted">아직 기록이 없습니다.</p>
+            {logs.filter((log) => isSameDay(log.created_at, now)).length === 0 ? (
+              <p className="muted">오늘 기록이 없습니다.</p>
             ) : (
-              logs.map((log) => (
+              logs.filter((log) => isSameDay(log.created_at, now)).map((log) => (
                 <div className="log-item deletable" key={log.id}>
                   <button
                     type="button"
@@ -337,7 +411,9 @@ export function FeedingTracker() {
                     {deletingId === log.id ? "…" : "×"}
                   </button>
                   <div>
-                    <div className="log-type">{log.feed_type === "breast" ? "모유" : "분유"}</div>
+                    <div className="log-type">
+                      {log.feed_type === "breast" ? "모유" : log.feed_type === "formula" ? "분유" : "혼합"}
+                    </div>
                     <p className="muted">{formatKoreanDate(log.created_at)}</p>
                   </div>
                   <div className="log-right">
@@ -346,8 +422,13 @@ export function FeedingTracker() {
                         <p className="muted">L {log.left_minutes ?? 0}분 / R {log.right_minutes ?? 0}분</p>
                         <strong>{feedLogToMl(log, breastMlPerMin)}ml</strong>
                       </>
-                    ) : (
+                    ) : log.feed_type === "formula" ? (
                       <strong>{log.formula_ml ?? 0}ml</strong>
+                    ) : (
+                      <>
+                        <p className="muted">L {log.left_minutes ?? 0}분 / R {log.right_minutes ?? 0}분 + {log.formula_ml ?? 0}ml</p>
+                        <strong>{feedLogToMl(log, breastMlPerMin)}ml</strong>
+                      </>
                     )}
                   </div>
                 </div>
@@ -356,6 +437,44 @@ export function FeedingTracker() {
           </div>
         </section>
       </div>
+
+      {showTimePopup && (
+        <div className="modal-overlay">
+          <div className="modal-content stack">
+            <h2>기록 시간 지정</h2>
+            <div className="stack">
+              <label className="muted" style={{ fontWeight: 600 }}>
+                수유 시간
+              </label>
+              <input
+                type="datetime-local"
+                className="time-input"
+                value={recordTime}
+                onChange={(e) => setRecordTime(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="modal-button cancel"
+                onClick={() => setShowTimePopup(false)}
+                disabled={saving}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className={`modal-button confirm ${type === "formula" ? "formula" : ""}`}
+                onClick={() => void submitLog()}
+                disabled={saving}
+              >
+                {saving ? "저장 중..." : "저장"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

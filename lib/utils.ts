@@ -10,7 +10,13 @@ export function feedLogToMl(log: FeedLogRow, breastMlPerMinute: number): number 
 
   const left = log.left_minutes ?? 0;
   const right = log.right_minutes ?? 0;
-  return (left + right) * breastMlPerMinute;
+  const breastMl = (left + right) * breastMlPerMinute;
+
+  if (log.feed_type === "mixed") {
+    return breastMl + (log.formula_ml ?? 0);
+  }
+
+  return breastMl;
 }
 
 export function isSameDay(isoDate: string, target: Date): boolean {
